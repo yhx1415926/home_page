@@ -59,6 +59,21 @@ export const getAdcode = async (key) => {
   return await res.json();
 };
 
+// 获取 IP 地理位置信息（location.yhx1415926.top）
+export const getIpGeoLocation = async () => {
+  const res = await fetch("https://location.yhx1415926.top/api/geo");
+  return await res.json();
+};
+
+
+// 根据经纬度获取高德逆地理位置信息
+export const getRegeoByLocation = async (key, longitude, latitude) => {
+  const res = await fetch(
+    `https://restapi.amap.com/v3/geocode/regeo?key=${key}&location=${longitude},${latitude}`,
+  );
+  return await res.json();
+};
+
 // 获取高德地理天气信息
 export const getWeather = async (key, city) => {
   const res = await fetch(
