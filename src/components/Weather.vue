@@ -23,7 +23,7 @@ import { Error } from "@icon-park/vue-next";
 
 // 高德开发者 Key
 const mainKey = import.meta.env.VITE_WEATHER_KEY;
-const geoWaitTimeout = 10000;
+const geoWaitTimeout = 20000;
 
 // 天气数据
 const weatherData = reactive({
