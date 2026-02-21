@@ -61,6 +61,15 @@ const getTemperature = (min, max) => {
   }
 };
 
+// 查询高德天气并校验结果
+const getValidatedWeather = async (cityOrAdcode) => {
+  const result = await getWeather(mainKey, cityOrAdcode);
+  if (!result?.lives?.[0]) {
+    throw "天气信息为空";
+  }
+  return result.lives[0];
+};
+
 // 使用自定义 IP 服务解析城市信息
 const resolveByIpGeoLocation = async () => {
   const geoData = await withTimeout(
@@ -115,29 +124,37 @@ const getWeatherData = async () => {
       return;
     }
 
+    let locationData = null;
+    let weather = null;
+
     // 先尝试高德 IP 定位；有数据则不等待自定义接口
     const adCode = await getAdcode(mainKey);
     if (adCode?.infocode === "10000" && adCode?.adcode) {
-      weatherData.adCode = {
+      locationData = {
         city: adCode.city,
         adcode: adCode.adcode,
       };
-    } else {
-      // 高德无定位数据时，最多等待 10 秒使用自定义 IP 定位
-      weatherData.adCode = await resolveByIpGeoLocation();
+      weatherData.adCode = locationData;
+
+      try {
+        weather = await getValidatedWeather(locationData.adcode);
+      } catch (error) {
+        console.warn("高德定位天气为空，改用自定义 IP 定位重试", error);
+      }
     }
 
-    // 获取天气信息
-    const result = await getWeather(mainKey, weatherData.adCode.adcode);
-    if (!result?.lives?.[0]) {
-      throw "天气信息为空";
+    // 当高德没有定位信息，或定位后的天气为空时，最多等待 10 秒使用自定义 IP 定位
+    if (!weather) {
+      locationData = await resolveByIpGeoLocation();
+      weatherData.adCode = locationData;
+      weather = await getValidatedWeather(locationData.adcode);
     }
 
     weatherData.weather = {
-      weather: result.lives[0].weather,
-      temperature: result.lives[0].temperature,
-      winddirection: result.lives[0].winddirection,
-      windpower: result.lives[0].windpower,
+      weather: weather.weather,
+      temperature: weather.temperature,
+      winddirection: weather.winddirection,
+      windpower: weather.windpower,
     };
   } catch (error) {
     console.error("天气信息获取失败:", error);
